@@ -14,7 +14,7 @@ from aiohttp import web
 import websockets
 import xmltodict
 
-from . import constants  # noqa
+from . import constants # noqa
 from .deltas import round_vehicles, diff_dicts
 import sumolib
 import traci
@@ -34,6 +34,8 @@ parser.add_argument(
 parser.add_argument(
     '--gui', action='store_true', default=False,
     help='Run sumo-gui rather than sumo. This is useful for debugging.')
+parser.add_argument(
+    '--sumo-port', dest='sumo_port')
 
 # Base directory for sumo_web3d
 DIR = os.path.join(os.path.dirname(__file__), '..')
@@ -335,16 +337,20 @@ async def websocket_simulation_control(sumo_start_fn, task, websocket, path):
 
 # TraCI business logic
 def start_sumo_executable(gui, sumo_args, sumocfg_file):
-    sumoBinary = sumolib.checkBinary('sumo' if not gui else 'sumo-gui')
-    additional_args = shlex.split(sumo_args) if sumo_args else []
-    args = [sumoBinary, '-c', sumocfg_file] + additional_args
-    print('Executing %s' % ' '.join(args))
-    traci.start(args)
+    if sumo_args.sumo_port:
+        traci.init(port=int(sumo_args.sumo_port), label="")
+        traci.setOrder(1)
+    else:
+        sumoBinary = sumolib.checkBinary('sumo' if not gui else 'sumo-gui')
+        additional_args = shlex.split(sumo_args.sumo_args) if sumo_args.sumo_args else []
+        args = [sumoBinary, '-c', sumocfg_file] + additional_args
+        print('Executing %s' % ' '.join(args))
+        traci.start(args)
     traci.simulation.subscribe()
 
     # Subscribe to all traffic lights. This set of IDs should never change.
-    for light_id in traci.trafficlights.getIDList():
-        traci.trafficlights.subscribe(light_id, [
+    for light_id in traci.trafficlight.getIDList():
+        traci.trafficlight.subscribe(light_id, [
             tc.TL_CURRENT_PHASE,
             tc.TL_CURRENT_PROGRAM
         ])
@@ -553,7 +559,7 @@ def setup_http_server(task, scenario_file, scenarios):
 def main(args):
     global current_scenario, scenarios, SCENARIOS_PATH
     task = None
-    sumo_start_fn = functools.partial(start_sumo_executable, args.gui, args.sumo_args)
+    sumo_start_fn = functools.partial(start_sumo_executable, args.gui, args)
 
     if args.configuration_file:
         # Replace the built-in scenarios with a single, user-specified one.
