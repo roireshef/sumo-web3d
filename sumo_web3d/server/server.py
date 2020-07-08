@@ -35,7 +35,7 @@ parser.add_argument(
     '--gui', action='store_true', default=False,
     help='Run sumo-gui rather than sumo. This is useful for debugging.')
 parser.add_argument(
-    '--sumo-port', dest='sumo_port')
+    '--remote-port', dest='sumo_port')
 
 # Base directory for sumo_web3d
 DIR = os.path.join(os.path.dirname(__file__), '..')
