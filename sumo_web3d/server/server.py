@@ -2,6 +2,7 @@
 # Copyright 2018 Sidewalk Labs | http://www.eclipse.org/legal/epl-v20.html
 import argparse
 import asyncio
+import subprocess
 from collections import Counter
 import functools
 import json
@@ -19,6 +20,7 @@ from .deltas import round_vehicles, diff_dicts
 import sumolib
 import traci
 from .xml_utils import get_only_key, parse_xml_file
+import psutil
 
 tc = traci.constants
 
@@ -611,6 +613,14 @@ def main(args):
 
 def run():
     args = parser.parse_args()
+
+    if not args.sumo_port or not args.configuration_file:
+        # automatically fetch information from sumo process of multiple clients
+        cmdlines = (p.cmdline() for p in psutil.process_iter())
+        sumo_cmd = [cmd for cmd in cmdlines if '--num-clients' in cmd and int(cmd[cmd.index('--num-clients') + 1])>1][0]
+        args.sumo_port = int(sumo_cmd[sumo_cmd.index('--remote-port')+1])
+        args.configuration_file = sumo_cmd[sumo_cmd.index('-c')+1]
+
     main(args)
 
 
