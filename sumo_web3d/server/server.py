@@ -170,7 +170,7 @@ def person_to_dict(person):
     }
 
 
-def vehicle_to_dict(vehicle):
+def vehicle_to_dict(vehicle, veh_id):
     """Extracts relevant information from what traci.vehicle.getSubscriptionResults."""
     return {
         'x': vehicle[tc.VAR_POSITION3D][0],
@@ -183,6 +183,7 @@ def vehicle_to_dict(vehicle):
         'width': vehicle[tc.VAR_WIDTH],
         'signals': vehicle[tc.VAR_SIGNALS],
         'vClass': vehicle.get(tc.VAR_VEHICLECLASS),
+        'color': traci.vehicle.getColor(veh_id)[:3]
     }
 
 
@@ -372,7 +373,7 @@ def simulate_next_step():
     ids = tuple(set(traci.vehicle.getIDList() +
                     traci.simulation.getSubscriptionResults()
                     [tc.VAR_DEPARTED_VEHICLES_IDS]))
-    vehicles = {veh_id: vehicle_to_dict(traci.vehicle.getSubscriptionResults(veh_id))
+    vehicles = {veh_id: vehicle_to_dict(traci.vehicle.getSubscriptionResults(veh_id), veh_id)
                 for veh_id in ids}
     # Vehicles are automatically unsubscribed upon arrival
     # and deleted from vehicle list on next
